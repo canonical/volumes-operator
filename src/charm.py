@@ -55,8 +55,9 @@ class KubeflowVolumesOperatorCharm(CharmBase):
             container = event.workload
             # Add intial Pebble config layer using the Pebble API
             container.add_layer("kubeflow-volumes", self.layer, combine=True)
-            # Autostart any services that were defined with startup: enabled
-            container.autostart()
+            if container.get_service("kubeflow-volumes").is_running():
+                container.stop("kubeflow-volumes")
+            container.start("kubeflow-volumes")
             self.unit.status = ActiveStatus()
         except ConnectionError:
             self.unit.status = WaitingStatus("Waiting for Pebble")
