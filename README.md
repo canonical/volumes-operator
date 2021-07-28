@@ -5,17 +5,26 @@
 This charm encompasses the Kubernetes Python operator for Kubeflow Volumes (see
 [CharmHub](https://charmhub.io/?q=kubeflow-volumes)).
 
-The Kubeflow Volumes operator is a Python script that wraps the latest released version
-of Kubeflow Volumes, providing lifecycle management and handling events such as install,
-upgrade, integrate, and remove.
+The Kubeflow Volumes operator is a Python script that wraps the latest released
+version of Kubeflow Volumes, providing lifecycle management and handling events
+such as install, upgrade, integrate, and remove.
 
 ## Usage
 
-To install Kubeflow Volumes, run:
+First, deploy this charm along with the ingress charm:
 
     juju deploy kubeflow-volumes
+    juju deploy nginx-ingress-integrator ingress
 
-For more information, see https://juju.is/docs
+Then, relate the two in order to get ingress to kubeflow-volumes:
+
+    juju add-relation kubeflow-volumes ingress
+
+Optionally, set a custom ingress address:
+
+    juju config kubeflow-volumes external-hostname="myvols.juju"
+
+If not set, this will default to `kubeflow-volumes.juju`.
 
 ## Developing
 
