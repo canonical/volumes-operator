@@ -1,0 +1,19 @@
+# See LICENSE file for licensing details.
+name: kubeflow-volumes
+display-name: Kubeflow Volumes
+summary: Kubeflow Volumes
+description: |
+  Kubeflow Volumes
+
+containers:
+  kubeflow-volumes:
+    resource: kf-volumes-image
+
+resources:
+  kf-volumes-image:
+    type: oci-image
+    description: OCI image for kubeflow-volumes (public.ecr.aws/j1r0q0g6/notebooks/volumes-web-app:v1.3.0-rc.1)
+
+requires:
+  ingress:
+    interface: ingress
