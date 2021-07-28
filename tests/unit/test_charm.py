@@ -34,7 +34,7 @@ class TestCharm(unittest.TestCase):
                     "override": "replace",
                     "summary": "kubeflow-volumes",
                     "command": "gunicorn -w 3 --bind 0.0.0.0:5000 "
-                               "--access-logfile - entrypoint:app",
+                    "--access-logfile - entrypoint:app",
                     "startup": "enabled",
                 }
             },
@@ -45,7 +45,8 @@ class TestCharm(unittest.TestCase):
         self.harness.charm.on.kubeflow_volumes_pebble_ready.emit(container)
         # Get the plan now we've run PebbleReady
         updated_plan = self.harness.get_container_pebble_plan(
-            "kubeflow-volumes").to_dict()
+            "kubeflow-volumes"
+        ).to_dict()
         # Check we've got the plan we expected
         self.assertEqual(expected_plan, updated_plan)
         # Ensure we set an ActiveStatus with no message

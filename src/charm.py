@@ -28,8 +28,9 @@ class KubeflowVolumesOperatorCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.framework.observe(self.on.kubeflow_volumes_pebble_ready,
-                               self._manage_workload)
+        self.framework.observe(
+            self.on.kubeflow_volumes_pebble_ready, self._manage_workload
+        )
         self.framework.observe(self.on.config_changed, self._manage_workload)
         self.framework.observe(self.on.upgrade_charm, self._manage_workload)
 
@@ -88,8 +89,7 @@ class KubeflowVolumesOperatorCharm(CharmBase):
                         "override": "replace",
                         "summary": "kubeflow-volumes",
                         "command": "gunicorn -w 3 --bind 0.0.0.0:{} "
-                                   "--access-logfile - entrypoint:app".format(
-                                       self.config["port"]),
+                        "--access-logfile - entrypoint:app".format(self.config["port"]),
                         "startup": "enabled",
                     }
                 },
