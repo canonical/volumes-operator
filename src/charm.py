@@ -13,12 +13,15 @@ develop a new k8s charm using the Operator Framework:
 
 import logging
 
-from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
-
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.pebble import Layer, ConnectionError
+from serialized_data_interface import (
+    NoCompatibleVersions,
+    NoVersionsListed,
+    get_interfaces,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,27 +31,30 @@ class KubeflowVolumesOperatorCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
+
+        # Return quickly if we can't verify interface versions
+        try:
+            self.interfaces = get_interfaces(self)
+        except NoVersionsListed as err:
+            self.unit.status = WaitingStatus(str(err))
+            return
+        except NoCompatibleVersions as err:
+            self.unit.status = BlockedStatus(str(err))
+            return
+
         self.framework.observe(
             self.on.kubeflow_volumes_pebble_ready, self._manage_workload
         )
         self.framework.observe(self.on.config_changed, self._manage_workload)
         self.framework.observe(self.on.upgrade_charm, self._manage_workload)
-
-        self.ingress = IngressRequires(
-            self,
-            {
-                "service-hostname": self.external_hostname,
-                "service-name": self.app.name,
-                "service-port": 8080,
-            },
+        self.framework.observe(
+            self.on["ingress"].relation_changed, self._configure_ingress
         )
 
     def _manage_workload(self, event):
         """Manage the workload using the Pebble API."""
         if not self._validate_config():
             return
-
-        self.ingress.update_config({"service-hostname": self.external_hostname})
 
         try:
             # Get a reference the container attribute on the PebbleReadyEvent
@@ -73,10 +79,16 @@ class KubeflowVolumesOperatorCharm(CharmBase):
             return False
         return True
 
-    @property
-    def external_hostname(self):
-        """Check if hostname has been configured. If not, generate one."""
-        return self.config["external-hostname"] or "{}.juju".format(self.app.name)
+    def _configure_ingress(self, event):
+        """Sends data for ingress relation."""
+        if self.interfaces["ingress"]:
+            self.interfaces["ingress"].send_data(
+                {
+                    "prefix": "/volumes/",
+                    "service": self.app.name,
+                    "port": self.config["port"],
+                }
+            )
 
     @property
     def layer(self):
