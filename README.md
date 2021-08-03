@@ -11,20 +11,9 @@ such as install, upgrade, integrate, and remove.
 
 ## Usage
 
-First, deploy this charm along with the ingress charm:
+Deploy this charm with:
 
     juju deploy kubeflow-volumes
-    juju deploy nginx-ingress-integrator ingress
-
-Then, relate the two in order to get ingress to kubeflow-volumes:
-
-    juju add-relation kubeflow-volumes ingress
-
-Optionally, set a custom ingress address:
-
-    juju config kubeflow-volumes external-hostname="myvols.juju"
-
-If not set, this will default to `kubeflow-volumes.juju`.
 
 ## Developing
 

@@ -4,9 +4,3 @@ options:
     type: int
     default: 5000
     description: HTTP port
-  external-hostname:
-    type: string
-    default: ""
-    description: |
-      The external hostname this application should be available on. If unset,
-      it will default to the deployed application name in the model.
