@@ -84,7 +84,8 @@ class KubeflowVolumesOperatorCharm(CharmBase):
         if self.interfaces["ingress"]:
             self.interfaces["ingress"].send_data(
                 {
-                    "prefix": "/volumes/",
+                    "prefix": "/volumes",
+                    "rewrite": "/",
                     "service": self.app.name,
                     "port": self.config["port"],
                 }
