@@ -57,7 +57,8 @@ class TestCharm(unittest.TestCase):
         rel = self.harness.model.get_relation("ingress", rid)
         self.harness.add_relation_unit(rid, "ingress/0")
         assert rel.data[self.harness.charm.app] == {
-            "service-hostname": "kubeflow-volumes.juju",
-            "service-name": "kubeflow-volumes",
-            "service-port": 8080,
+            "prefix": "/volumes",
+            "rewrite": "/",
+            "service": self.harness.charm.app.name,
+            "port": self.harness.config["port"],
         }
