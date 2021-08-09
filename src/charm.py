@@ -48,7 +48,7 @@ class Operator(CharmBase):
             self.interfaces["ingress"].send_data(
                 {
                     "prefix": "/volumes",
-                    "rewrite": "/volumes",
+                    "rewrite": "/",
                     "service": self.model.app.name,
                     "port": self.model.config["port"],
                 }
@@ -118,6 +118,8 @@ class Operator(CharmBase):
                         "envConfig": {
                             "USERID_HEADER": "kubeflow-userid",
                             "USERID_PREFIX": "",
+                            "APP_SECURE_COOKIES": str(config["secure-cookies"]).lower(),
+                            "BACKEND_MODE": config["backend-mode"],
                             "APP_PREFIX": "/volumes",
                         },
                         "ports": [{"name": "http", "containerPort": config["port"]}],
