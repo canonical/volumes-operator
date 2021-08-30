@@ -17,27 +17,14 @@ jobs:
     - name: Install dependencies
       run: |
         set -eux
-        sudo snap install charm --classic
-        sudo pip3 install charmcraft==1.0.0
-        sudo snap install yq
+        sudo pip3 install charmcraft==1.2.1
 
     - name: Publish charm
       env:
-        CHARMSTORE_CREDENTIAL: ${{ secrets.CHARMSTORE_CREDENTIAL }}
+        CHARMCRAFT_CREDENTIALS: ${{ secrets.CHARMCRAFT_CREDENTIALS }}
+        CHARMCRAFT_DEVELOPER: 'Y'
       run: |
         set -eux
-        echo $CHARMSTORE_CREDENTIAL > ~/.go-cookies
-
-        CS_URL="cs:~kubeflow-charmers/kubeflow-volumes"
-
-        IMAGE=$(yq eval '.resources.oci-image.upstream-source' metadata.yaml)
-        charmcraft build
-        docker pull $IMAGE
-        charm push ./*.charm $CS_URL --resource oci-image=$IMAGE
-
-        REVISION=$(charm show $CS_URL --channel unpublished --format yaml | yq e .id-revision.Revision -)
-        OCI_VERSION=$(charm list-resources $CS_URL --format yaml --channel unpublished | yq e .0.revision -)
-        charm release \
-            --channel edge \
-            --resource oci-image-$OCI_VERSION \
-            $CS_URL-$REVISION
+        echo "$CHARMCRAFT_CREDENTIALS" > ~/.config/charmcraft.credentials
+        charmcraft pack --destructive-mode
+        charmcraft upload ./*.charm --release=edge
