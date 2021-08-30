@@ -20,6 +20,7 @@ class Operator(CharmBase):
             # We can't do anything useful when not the leader, so do nothing.
             self.model.unit.status = WaitingStatus("Waiting for leadership")
             return
+
         self.log = logging.getLogger(__name__)
         self.image = OCIImageResource(self, "oci-image")
 
@@ -35,9 +36,9 @@ class Operator(CharmBase):
             self.model.unit.status = ActiveStatus()
 
         for event in [
+            self.on.config_changed,
             self.on.install,
             self.on.upgrade_charm,
-            self.on.config_changed,
         ]:
             self.framework.observe(event, self.main)
 
