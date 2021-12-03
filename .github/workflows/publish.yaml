@@ -7,8 +7,12 @@ on:
       - main
       - track/**
   pull_request:
+#    branches:
+#      - branch/**
     branches:
-      - branch/**
+      - master
+      - main
+      - track/**
 
 jobs:
   get-charm-matrix:
