@@ -4,63 +4,36 @@ on:
   push:
     branches:
       - master
+      - main
+      - track/**
+  pull_request:
+    branches:
+      - branch/**
 
 jobs:
-  ch:
-    name: Charmhub
+  get-charm-matrix:
+    name: Generate the Charm Matrix
     runs-on: ubuntu-latest
-
+    outputs:
+      charm_paths_json: ${{ steps.get-charm-matrix-step.outputs.CHARM_PATHS_JSON }}
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - name: Get paths for all charms in repo
+        id: get-charm-matrix-step
+        run: ./.github/workflows/get-charm-paths.sh
 
-    - name: Install dependencies
-      run: |
-        set -eux
-        sudo pip3 install charmcraft==1.2.1
-
-    - name: Publish charm
-      env:
-        CHARMCRAFT_CREDENTIALS: ${{ secrets.CHARMCRAFT_CREDENTIALS }}
-        CHARMCRAFT_DEVELOPER: 'Y'
-      run: |
-        set -eux
-        echo "$CHARMCRAFT_CREDENTIALS" > ~/.config/charmcraft.credentials
-        charmcraft pack --destructive-mode
-        charmcraft upload ./*.charm --release=edge
-  cs:
-    name: Charm Store
+  publish-charm:
+    name: Publish Charm
     runs-on: ubuntu-latest
-
+    needs: get-charm-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.get-charm-matrix.outputs.charm_paths_json) }}
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-
-    - name: Install dependencies
-      run: |
-        set -eux
-        sudo snap install charm --classic
-        sudo pip3 install charmcraft==1.2.1
-        sudo snap install yq
-
-    - name: Publish charm
-      env:
-        CHARMSTORE_CREDENTIAL: ${{ secrets.CHARMSTORE_CREDENTIAL }}
-        CHARMCRAFT_DEVELOPER: 'Y'
-      run: |
-        set -eux
-        echo "$CHARMSTORE_CREDENTIAL" > ~/.go-cookies
-
-        CS_URL="cs:~kubeflow-charmers/kubeflow-volumes"
-
-        IMAGE=$(yq eval '.resources.oci-image.upstream-source' metadata.yaml)
-        charmcraft pack --destructive-mode
-        docker pull $IMAGE
-        charm push ./*.charm $CS_URL --resource oci-image=$IMAGE
-
-        REVISION=$(charm show $CS_URL --channel unpublished --format yaml | yq e .id-revision.Revision -)
-        OCI_VERSION=$(charm list-resources $CS_URL --format yaml --channel unpublished | yq e .0.revision -)
-        charm release \
-            --channel edge \
-            --resource oci-image-$OCI_VERSION \
-            $CS_URL-$REVISION
+      - uses: actions/checkout@v2
+      # TODO: Update to @main when https://github.com/canonical/charmhub-upload-action/pull/3 merged
+      - uses: canonical/charmhub-upload-action@branch/upload-charm-revisions
+        with:
+          credentials: ${{ secrets.CHARMCRAFT_CREDENTIALS }}
+          charm-path: ${{ matrix.charm-path }}
+          charmcraft-channel: latest/edge
