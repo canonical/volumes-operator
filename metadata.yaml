@@ -2,7 +2,6 @@
 # See LICENSE file for licensing details.
 
 name: kubeflow-volumes
-display-name: Kubeflow Volumes
 summary: Kubeflow Volumes
 description: Kubeflow Volumes
 maintainers: [Juju Developers <juju@lists.ubuntu.com>]
