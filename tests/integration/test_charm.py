@@ -57,9 +57,9 @@ async def test_build_and_deploy(ops_test):
         timeout=600,
     )
     await ops_test.model.deploy(
-        "cs:kubeflow-dashboard", config={"profile": "kubeflow-user"}
+        "kubeflow-dashboard", config={"profile": "kubeflow-user"}
     )
-    await ops_test.model.deploy("cs:kubeflow-profiles")
+    await ops_test.model.deploy("kubeflow-profiles")
 
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
     await ops_test.model.add_relation(
