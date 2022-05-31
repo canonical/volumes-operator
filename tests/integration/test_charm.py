@@ -119,7 +119,7 @@ def driver(request, ops_test):
 
 
 def test_first_access_to_ui(driver):
-    """ Access volumes page once for everything to be initialized correctly """
+    """Access volumes page once for everything to be initialized correctly"""
 
     driver, wait, url = driver
 
