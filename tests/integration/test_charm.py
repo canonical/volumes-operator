@@ -25,7 +25,7 @@ METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 async def test_build_and_deploy(ops_test):
     my_charm = await ops_test.build_charm(".")
     run(["juju", "switch", ops_test.model_full_name])
-    await ops_test.model.deploy("cs:istio")
+    await ops_test.model.deploy("cs:istio", trust=True)
     await ops_test.model.applications["istio-pilot"].set_config(
         {"default-gateway": "kubeflow-gateway"}
     )
