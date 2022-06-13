@@ -28,13 +28,15 @@ async def test_build_and_deploy(ops_test):
 
     await ops_test.model.deploy(
         entity_url="istio-pilot",
-        channel="1.5/stable",
-        config={"default-gateway": "kubeflow-gateway"},
+        channel="latest/stable",
+        config={"default-gateways": "kubeflow-gateway"},
+        trust=True,
     )
     await ops_test.model.deploy(
         entity_url="istio-gateway",
         application_name="istio-ingressgateway",
-        channel="1.5/stable",
+        channel="latest/stable",
+        config={"kind": "ingress"},
         trust=True,
     )
     await ops_test.model.add_relation(
@@ -42,13 +44,24 @@ async def test_build_and_deploy(ops_test):
         "istio-ingressgateway:istio-pilot",
     )
 
-    await ops_test.model.block_until(
-        lambda: all(
-            (unit.workload_status == "active") and unit.agent_status == "idle"
-            for _, application in ops_test.model.applications.items()
-            for unit in application.units
-        ),
-        timeout=600,
+    await ops_test.run(
+            "kubectl",
+            "patch",
+            "role/istio-ingressgateway-operator",
+            "-p",
+            yaml.dump(
+                {
+                    "apiVersion": "rbac.authorization.k8s.io/v1",
+                    "kind": "Role",
+                    "metadata": {"name": "istio-ingressgateway-operator"},
+                    "rules": [{"apiGroups": ["*"], "resources": ["*"], "verbs": ["*"]}],
+                }
+            ),
+    )
+
+    await ops_test.model.wait_for_idle(
+        status="active",
+        timeout=60 * 10,
     )
 
     await ops_test.model.deploy(
