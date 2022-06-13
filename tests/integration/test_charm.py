@@ -5,11 +5,11 @@ import logging
 from pathlib import Path
 from random import choices
 from string import ascii_lowercase
-from subprocess import check_output, run
 from time import sleep
 
 import yaml
-
+import lightkube
+from lightkube.resources.core_v1 import Service
 import pytest
 from selenium.common.exceptions import JavascriptException, WebDriverException
 from selenium.webdriver.firefox.options import Options
@@ -24,46 +24,22 @@ METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test):
     my_charm = await ops_test.build_charm(".")
-    run(["juju", "switch", ops_test.model_full_name])
-    await ops_test.model.deploy("cs:istio", trust=True)
-    await ops_test.model.applications["istio-pilot"].set_config(
-        {"default-gateway": "kubeflow-gateway"}
-    )
-    sleep(10)
-    run(
-        [
-            "juju",
-            "kubectl",
-            "patch",
-            "role/istio-ingressgateway-operator",
-            "-p",
-            yaml.dump(
-                {
-                    "apiVersion": "rbac.authorization.k8s.io/v1",
-                    "kind": "Role",
-                    "metadata": {"name": "istio-ingressgateway-operator"},
-                    "rules": [{"apiGroups": ["*"], "resources": ["*"], "verbs": ["*"]}],
-                }
-            ),
-        ]
-    )
+    log.info(f"Built charm {my_charm}")
 
-    await ops_test.model.block_until(
-        lambda: all(
-            (unit.workload_status == "active") and unit.agent_status == "idle"
-            for _, application in ops_test.model.applications.items()
-            for unit in application.units
-        ),
-        timeout=600,
+    await ops_test.model.deploy(
+        entity_url="istio-pilot",
+        channel="1.5/stable",
+        config={"default-gateway": "kubeflow-gateway"},
     )
     await ops_test.model.deploy(
-        "kubeflow-dashboard", config={"profile": "kubeflow-user"}
+        entity_url="istio-gateway",
+        application_name="istio-ingressgateway",
+        channel="1.5/stable",
+        trust=True,
     )
-    await ops_test.model.deploy("kubeflow-profiles")
-
-    await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
     await ops_test.model.add_relation(
-        "istio-pilot:ingress", "kubeflow-dashboard:ingress"
+        "istio-pilot:istio-pilot",
+        "istio-ingressgateway:istio-pilot",
     )
 
     await ops_test.model.block_until(
@@ -74,6 +50,31 @@ async def test_build_and_deploy(ops_test):
         ),
         timeout=600,
     )
+
+    await ops_test.model.deploy(
+        entity_url="kubeflow-dashboard",
+        channel="1.4/edge",
+        config={"profile": "kubeflow-user"},
+    )
+    await ops_test.model.deploy(
+        entity_url="kubeflow-profiles",
+        channel="1.4/edge",
+    )
+    await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
+    await ops_test.model.add_relation(
+        "istio-pilot:ingress",
+        "kubeflow-dashboard:ingress",
+    )
+
+    await ops_test.model.block_until(
+        lambda: all(
+            (unit.workload_status == "active") and unit.agent_status == "idle"
+            for _, application in ops_test.model.applications.items()
+            for unit in application.units
+        ),
+        timeout=600,
+    )
+
     image_path = METADATA["resources"]["oci-image"]["upstream-source"]
     resources = {"oci-image": image_path}
     await ops_test.model.deploy(my_charm, resources=resources)
@@ -89,9 +90,14 @@ async def test_status(ops_test):
 
 @pytest.fixture()
 def driver(request, ops_test):
-    status = yaml.safe_load(check_output(["juju", "status", "--format=yaml"]))
-    endpoint = status["applications"]["istio-ingressgateway"]["address"]
+    lightkube_client = lightkube.Client()
+    gateway_svc = lightkube_client.get(
+        Service, "istio-ingressgateway", namespace=ops_test.model_name
+    )
+
+    endpoint = gateway_svc.status.loadBalancer.ingress[0].ip
     url = f"http://{endpoint}.nip.io/_/volumes/?ns=kubeflow-user"
+
     options = Options()
     options.headless = True
     options.log.level = "trace"
