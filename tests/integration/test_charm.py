@@ -45,18 +45,18 @@ async def test_build_and_deploy(ops_test):
     )
 
     await ops_test.run(
-            "kubectl",
-            "patch",
-            "role/istio-ingressgateway-operator",
-            "-p",
-            yaml.dump(
-                {
-                    "apiVersion": "rbac.authorization.k8s.io/v1",
-                    "kind": "Role",
-                    "metadata": {"name": "istio-ingressgateway-operator"},
-                    "rules": [{"apiGroups": ["*"], "resources": ["*"], "verbs": ["*"]}],
-                }
-            ),
+        "kubectl",
+        "patch",
+        "role/istio-ingressgateway-operator",
+        "-p",
+        yaml.dump(
+            {
+                "apiVersion": "rbac.authorization.k8s.io/v1",
+                "kind": "Role",
+                "metadata": {"name": "istio-ingressgateway-operator"},
+                "rules": [{"apiGroups": ["*"], "resources": ["*"], "verbs": ["*"]}],
+            }
+        ),
     )
 
     await ops_test.model.wait_for_idle(
