@@ -69,7 +69,10 @@ jobs:
           sudo usermod --append --groups lxd $USER
           sudo apt install -y firefox-geckodriver
           sudo snap install juju-kubectl --classic
-          sg microk8s -c "tox -e integration"
+          # Requires the model to be called kubeflow due to this bug:
+          # https://github.com/kubeflow/kubeflow/issues/6136
+          juju add-model kubeflow
+          sg microk8s -c "tox -e integration -- --model kubeflow"
 
       - run: sg microk8s -c "microk8s.kubectl get all -A"
         if: failure()
