@@ -3,8 +3,9 @@
 
 import logging
 from pathlib import Path
-from random import choices
-from string import ascii_lowercase
+
+# from random import choices
+# from string import ascii_lowercase
 from subprocess import check_output
 from time import sleep
 
