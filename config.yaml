@@ -12,5 +12,5 @@ options:
     description: Which mode out of `development` or `production` the backend server should use
   secure-cookies:
     type: boolean
-    default: false
+    default: true
     description: Whether cookies should require HTTPS
