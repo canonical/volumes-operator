@@ -6,7 +6,7 @@ from pathlib import Path
 
 # from random import choices
 # from string import ascii_lowercase
-from subprocess import check_output
+# from subprocess import check_output
 from time import sleep
 
 import yaml
@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 PROFILE_NAME = "kubeflow-user"
+
 
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test: OpsTest):
@@ -61,9 +62,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
     )
 
     await ops_test.model.deploy(
-        "kubeflow-dashboard",
-        channel="latest/edge",
-        config={"profile": PROFILE_NAME}
+        "kubeflow-dashboard", channel="latest/edge", config={"profile": PROFILE_NAME}
     )
     await ops_test.model.deploy(
         "kubeflow-profiles",
@@ -124,6 +123,9 @@ def driver(request, ops_test):
 
 
 # TODO: Reenable tests - Temporarily disabled.  They work locally, but not in CI
+# TODO: v1.6 removed the #newResource ID from the button we want to click.  Need
+#       to access it another way
+#
 # def test_first_access_to_ui(driver):
 #     """Access volumes page once for everything to be initialized correctly"""
 #
