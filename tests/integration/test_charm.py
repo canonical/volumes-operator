@@ -6,14 +6,13 @@ from pathlib import Path
 
 # from random import choices
 # from string import ascii_lowercase
-from subprocess import check_output
+# from subprocess import check_output
 from time import sleep
 
 import yaml
 
 from lightkube import Client
-from lightkube.models.rbac_v1 import PolicyRule
-from lightkube.resources.rbac_authorization_v1 import Role
+from lightkube.resources.core_v1 import Service
 import pytest
 from pytest_operator.plugin import OpsTest
 from selenium.common.exceptions import JavascriptException, WebDriverException
@@ -24,6 +23,7 @@ from seleniumwire import webdriver
 log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
+PROFILE_NAME = "kubeflow-user"
 
 
 @pytest.mark.abort_on_fail
@@ -48,7 +48,7 @@ async def test_build_and_deploy(ops_test: OpsTest):
 async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.deploy(
         "istio-pilot",
-        channel="1.5/stable",
+        channel="latest/edge",
         config={"default-gateway": "kubeflow-gateway"},
         trust=True,
     )
@@ -56,17 +56,18 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.deploy(
         "istio-gateway",
         application_name="istio-ingressgateway",
-        channel="1.5/stable",
+        channel="latest/edge",
+        config={"kind": "ingress"},
         trust=True,
     )
 
-    # Patch istio-gateway Role to grant access to its own configmap (needed for istio charm v1.5)
-    await patch_istiogateway_role(ops_test=ops_test)
-
     await ops_test.model.deploy(
-        "kubeflow-dashboard", config={"profile": "kubeflow-user"}
+        "kubeflow-dashboard", channel="latest/edge", config={"profile": PROFILE_NAME}
     )
-    await ops_test.model.deploy("kubeflow-profiles")
+    await ops_test.model.deploy(
+        "kubeflow-profiles",
+        channel="latest/edge",
+    )
 
     await ops_test.model.add_relation(
         "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
@@ -86,10 +87,15 @@ async def test_relate_dependencies(ops_test: OpsTest):
 
 
 @pytest.fixture()
-def driver(request):
-    status = yaml.safe_load(check_output(["juju", "status", "--format=yaml"]))
-    endpoint = status["applications"]["istio-ingressgateway"]["address"]
-    url = f"http://{endpoint}.nip.io/_/volumes/?ns=kubeflow-user"
+def driver(request, ops_test):
+    lightkube_client = Client()
+    gateway_svc = lightkube_client.get(
+        Service, "istio-ingressgateway-workload", namespace=ops_test.model_name
+    )
+
+    endpoint = gateway_svc.status.loadBalancer.ingress[0].ip
+    url = f"http://{endpoint}.nip.io/_/volumes/?ns={PROFILE_NAME}"
+
     options = Options()
     options.headless = True
     options.log.level = "trace"
@@ -100,7 +106,7 @@ def driver(request):
     }
 
     with webdriver.Firefox(**kwargs) as driver:
-        wait = WebDriverWait(driver, 180, 1, (JavascriptException, StopIteration))
+        wait = WebDriverWait(driver, 15, 1, (JavascriptException, StopIteration))
         for _ in range(60):
             try:
                 driver.get(url)
@@ -117,6 +123,9 @@ def driver(request):
 
 
 # TODO: Reenable tests - Temporarily disabled.  They work locally, but not in CI
+# TODO: v1.6 removed the #newResource ID from the button we want to click.  Need
+#       to access it another way
+#
 # def test_first_access_to_ui(driver):
 #     """Access volumes page once for everything to be initialized correctly"""
 #
@@ -200,31 +209,3 @@ def fix_queryselector(elems):
 
     selectors = '").shadowRoot.querySelector("'.join(elems)
     return 'return document.querySelector("' + selectors + '")'
-
-
-async def patch_istiogateway_role(ops_test: OpsTest):
-    """Patch the istio-gateway Role so that it can access it's own configmap.
-
-    This can be removed when we move to the sidecar istio v1.11 charm
-    """
-    # Wait for object that needs patching to be created
-    # We should probably just retry the attempt to patch a few times instead of wait, but this
-    # is a temp fix anyway
-    sleep(15)
-
-    async with ops_test.fast_forward():
-        lightkube_client = Client(
-            namespace=ops_test.model_name,
-        )
-
-        istio_gateway_role_name = "istio-ingressgateway-operator"
-
-        new_policy_rule = PolicyRule(verbs=["*"], apiGroups=["*"], resources=["*"])
-        this_role = lightkube_client.get(
-            Role,
-            istio_gateway_role_name,
-        )
-        this_role.rules.append(new_policy_rule)
-        lightkube_client.patch(Role, istio_gateway_role_name, this_role)
-
-        sleep(30)
