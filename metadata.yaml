@@ -6,14 +6,14 @@ summary: Kubeflow Volumes
 description: Kubeflow Volumes
 maintainers: [Juju Developers <juju@lists.ubuntu.com>]
 tags: [ai, bigdata, kubeflow, machine-learning, tensorflow]
-min-juju-version: "2.9.0"
+min-juju-version: '2.9.0'
 series: [kubernetes]
 resources:
   oci-image:
     type: oci-image
     description: 'Backing OCI image'
     auto-fetch: true
-    upstream-source: docker.io/kubeflownotebookswg/volumes-web-app:v1.6.0-rc.0
+    upstream-source: docker.io/kubeflownotebookswg/volumes-web-app:v1.6.0-rc.1
 requires:
   ingress:
     interface: ingress
