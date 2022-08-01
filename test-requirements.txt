@@ -2,6 +2,6 @@
 # See LICENSE file for licensing details.
 
 black
-flake8
+flake8==4.0.1
 flake8-copyright<0.3
 pytest
