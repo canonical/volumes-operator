@@ -60,6 +60,9 @@ async def test_relate_dependencies(ops_test: OpsTest):
         config={"kind": "ingress"},
         trust=True,
     )
+    await ops_test.model.add_relation(
+        "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
+    )
 
     await ops_test.model.deploy(
         "kubeflow-dashboard", channel="latest/edge", config={"profile": PROFILE_NAME}
@@ -69,14 +72,10 @@ async def test_relate_dependencies(ops_test: OpsTest):
         channel="latest/edge",
     )
 
-    await ops_test.model.add_relation(
-        "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
-    )
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
     await ops_test.model.add_relation(
         "istio-pilot:ingress", "kubeflow-dashboard:ingress"
     )
-
     await ops_test.model.add_relation("istio-pilot", "kubeflow-volumes")
     await ops_test.model.wait_for_idle(
         wait_for_units=True,
