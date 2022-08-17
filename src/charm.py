@@ -2,10 +2,11 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import json
 import logging
 
 from oci_image import OCIImageResource, OCIImageResourceError
-from ops.charm import CharmBase
+from ops.charm import CharmBase, RelationJoinedEvent
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from serialized_data_interface import (
@@ -41,6 +42,10 @@ class Operator(CharmBase):
             self.on["ingress"].relation_changed,
         ]:
             self.framework.observe(event, self.main)
+
+        self.framework.observe(
+            self.on.sidebar_relation_joined, self._on_sidebar_relation_joined
+        )
 
     def main(self, event):
         try:
@@ -156,6 +161,25 @@ class Operator(CharmBase):
         except OCIImageResourceError as e:
             raise CheckFailed(f"{e.status.message}", e.status_type)
         return image_details
+
+    def _on_sidebar_relation_joined(self, event: RelationJoinedEvent):
+        if not self.unit.is_leader():
+            return
+        event.relation.data[self.app].update(
+            {
+                "config": json.dumps(
+                    [
+                        {
+                            "app": self.app.name,
+                            "type": "item",
+                            "link": "/volumes/",
+                            "text": "Volumes",
+                            "icon": "device:storage",
+                        }
+                    ]
+                )
+            }
+        )
 
 
 if __name__ == "__main__":
