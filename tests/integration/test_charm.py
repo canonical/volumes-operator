@@ -23,7 +23,6 @@ from seleniumwire import webdriver
 log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
-PROFILE_NAME = "kubeflow-user"
 
 
 @pytest.mark.abort_on_fail
@@ -64,9 +63,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
         "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
     )
 
-    await ops_test.model.deploy(
-        "kubeflow-dashboard", channel="latest/edge", config={"profile": PROFILE_NAME}
-    )
+    await ops_test.model.deploy("kubeflow-dashboard", channel="latest/edge", trust=True)
     await ops_test.model.deploy(
         "kubeflow-profiles",
         channel="latest/edge",
@@ -93,7 +90,7 @@ def driver(request, ops_test):
     )
 
     endpoint = gateway_svc.status.loadBalancer.ingress[0].ip
-    url = f"http://{endpoint}.nip.io/_/volumes/?ns={PROFILE_NAME}"
+    url = f"http://{endpoint}.nip.io/_/volumes"
 
     options = Options()
     options.headless = True
