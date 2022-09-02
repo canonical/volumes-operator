@@ -68,7 +68,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
         "kubeflow-dashboard",
         channel="latest/edge",
         config={"profile": PROFILE_NAME},
-        trust=True
+        trust=True,
     )
     await ops_test.model.deploy(
         "kubeflow-profiles",
