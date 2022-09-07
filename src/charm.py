@@ -2,11 +2,13 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import json
 import logging
 
+from charms.kubeflow_dashboard.v0.kubeflow_dashboard_sidebar import (
+    KubeflowDashboardSidebar,
+)
 from oci_image import OCIImageResource, OCIImageResourceError
-from ops.charm import CharmBase, RelationJoinedEvent
+from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from serialized_data_interface import (
@@ -14,6 +16,16 @@ from serialized_data_interface import (
     NoVersionsListed,
     get_interfaces,
 )
+
+SIDEBAR_LINK = [
+    {
+        "position": 3,
+        "type": "item",
+        "link": "/volumes/",
+        "text": "Volumes",
+        "icon": "device:storage",
+    }
+]
 
 
 class CheckFailed(Exception):
@@ -33,6 +45,7 @@ class Operator(CharmBase):
 
         self.log = logging.getLogger(__name__)
         self.image = OCIImageResource(self, "oci-image")
+        self.kubeflow_dashboard_sidebar = KubeflowDashboardSidebar(self, SIDEBAR_LINK)
 
         for event in [
             self.on.config_changed,
@@ -42,14 +55,6 @@ class Operator(CharmBase):
             self.on["ingress"].relation_changed,
         ]:
             self.framework.observe(event, self.main)
-
-        self.framework.observe(
-            self.on.sidebar_relation_joined, self._on_sidebar_relation_joined
-        )
-        self.framework.observe(
-            self.on.sidebar_relation_departed,
-            self._on_sidebar_relation_departed,
-        )
 
     def main(self, event):
         try:
@@ -165,31 +170,6 @@ class Operator(CharmBase):
         except OCIImageResourceError as e:
             raise CheckFailed(f"{e.status.message}", e.status_type)
         return image_details
-
-    def _on_sidebar_relation_joined(self, event: RelationJoinedEvent):
-        if not self.unit.is_leader():
-            return
-        event.relation.data[self.app].update(
-            {
-                "config": json.dumps(
-                    [
-                        {
-                            "app": self.app.name,
-                            "position": 3,
-                            "type": "item",
-                            "link": "/volumes/",
-                            "text": "Volumes",
-                            "icon": "device:storage",
-                        }
-                    ]
-                )
-            }
-        )
-
-    def _on_sidebar_relation_departed(self, event):
-        if not self.unit.is_leader():
-            return
-        event.relation.data[self.app].update({"config": json.dumps([])})
 
 
 if __name__ == "__main__":
