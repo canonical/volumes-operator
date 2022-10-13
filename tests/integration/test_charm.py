@@ -48,7 +48,7 @@ async def test_build_and_deploy(ops_test: OpsTest):
 async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.deploy(
         "istio-pilot",
-        channel="latest/edge",
+        channel="1.11/stable",
         config={"default-gateway": "kubeflow-gateway"},
         trust=True,
     )
@@ -56,7 +56,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.deploy(
         "istio-gateway",
         application_name="istio-ingressgateway",
-        channel="latest/edge",
+        channel="1.11/stable",
         config={"kind": "ingress"},
         trust=True,
     )
@@ -65,11 +65,11 @@ async def test_relate_dependencies(ops_test: OpsTest):
     )
 
     await ops_test.model.deploy(
-        "kubeflow-dashboard", channel="latest/edge", config={"profile": PROFILE_NAME}
+        "kubeflow-dashboard", channel="1.6/stable", config={"profile": PROFILE_NAME}
     )
     await ops_test.model.deploy(
         "kubeflow-profiles",
-        channel="latest/edge",
+        channel="1.6/stable",
     )
 
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
