@@ -64,9 +64,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
         "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
     )
 
-    await ops_test.model.deploy(
-        "kubeflow-dashboard", channel="latest/edge", config={"profile": PROFILE_NAME}
-    )
+    await ops_test.model.deploy("kubeflow-dashboard", channel="latest/edge")
     await ops_test.model.deploy(
         "kubeflow-profiles",
         channel="latest/edge",
