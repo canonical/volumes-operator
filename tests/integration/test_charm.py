@@ -7,18 +7,19 @@ from pathlib import Path
 # from random import choices
 # from string import ascii_lowercase
 # from subprocess import check_output
-from time import sleep
+# from time import sleep
 
 import yaml
 
-from lightkube import Client
-from lightkube.resources.core_v1 import Service
+# from lightkube import Client
+# from lightkube.resources.core_v1 import Service
 import pytest
 from pytest_operator.plugin import OpsTest
-from selenium.common.exceptions import JavascriptException, WebDriverException
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from seleniumwire import webdriver
+
+# from selenium.common.exceptions import JavascriptException, WebDriverException
+# from selenium.webdriver.firefox.options import Options
+# from selenium.webdriver.support.ui import WebDriverWait
+# from seleniumwire import webdriver
 
 log = logging.getLogger(__name__)
 
