@@ -23,7 +23,6 @@ from seleniumwire import webdriver
 log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
-PROFILE_NAME = "kubeflow-user"
 
 
 @pytest.mark.abort_on_fail
@@ -64,7 +63,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
         "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
     )
 
-    await ops_test.model.deploy("kubeflow-dashboard", channel="latest/edge")
+    await ops_test.model.deploy("kubeflow-dashboard", channel="latest/edge", trust=True)
     await ops_test.model.deploy(
         "kubeflow-profiles",
         channel="latest/edge",
@@ -84,14 +83,29 @@ async def test_relate_dependencies(ops_test: OpsTest):
 
 
 @pytest.fixture()
-def driver(request, ops_test):
+def profile(lightkube_client):
+    """Creates a Profile object in cluster, cleaning it up after"""
+    profile_file = "./tests/integration/profile.yaml"
+    yaml_text = _safe_load_file_to_text(profile_file)
+    yaml_rendered = yaml.safe_load(yaml_text)
+    profilename = yaml_rendered["metadata"]["name"]
+
+    create_all_from_yaml(yaml_file=yaml_text, lightkube_client=lightkube_client)
+    yield profilename
+
+    delete_all_from_yaml(yaml_text, lightkube_client)
+
+
+@pytest.fixture()
+def driver(request, ops_test, profile):
+    profile_name = profile
     lightkube_client = Client()
     gateway_svc = lightkube_client.get(
         Service, "istio-ingressgateway-workload", namespace=ops_test.model_name
     )
 
     endpoint = gateway_svc.status.loadBalancer.ingress[0].ip
-    url = f"http://{endpoint}.nip.io/_/volumes/?ns={PROFILE_NAME}"
+    url = f"http://{endpoint}.nip.io/_/volumes/?ns={profile_name}"
 
     options = Options()
     options.headless = True
