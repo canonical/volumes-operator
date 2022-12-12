@@ -1,0 +1,7 @@
+juju
+pytest
+pytest-operator
+selenium
+selenium-wire
+lightkube
+-r requirements.txt

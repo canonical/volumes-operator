@@ -4,17 +4,17 @@
 import logging
 from pathlib import Path
 
+# from lightkube import Client
+# from lightkube.resources.core_v1 import Service
+import pytest
+import yaml
+from pytest_operator.plugin import OpsTest
+
 # from random import choices
 # from string import ascii_lowercase
 # from subprocess import check_output
 # from time import sleep
 
-import yaml
-
-# from lightkube import Client
-# from lightkube.resources.core_v1 import Service
-import pytest
-from pytest_operator.plugin import OpsTest
 
 # from selenium.common.exceptions import JavascriptException, WebDriverException
 # from selenium.webdriver.firefox.options import Options
@@ -71,9 +71,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
     )
 
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
-    await ops_test.model.add_relation(
-        "istio-pilot:ingress", "kubeflow-dashboard:ingress"
-    )
+    await ops_test.model.add_relation("istio-pilot:ingress", "kubeflow-dashboard:ingress")
     await ops_test.model.add_relation("istio-pilot", "kubeflow-volumes")
     await ops_test.model.wait_for_idle(
         wait_for_units=True,
@@ -141,7 +139,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
 #         driver.get_screenshot_as_file(f"/tmp/selenium-{request.node.name}.png")
 
 
-# TODO: Reenable tests - Temporarily disabled.  They work locally, but not in CI
+# TODO: Re-enable tests - Temporarily disabled.  They work locally, but not in CI
 # TODO: v1.6 removed the #newResource ID from the button we want to click.  Need
 #       to access it another way
 #
