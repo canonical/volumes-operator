@@ -2,9 +2,10 @@
 # See LICENSE file for licensing details.
 
 import pytest
-from charm import Operator
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
+
+from charm import Operator
 
 
 @pytest.fixture
@@ -26,9 +27,7 @@ def test_leader_elected(harness):
 def test_missing_image(harness):
     harness.set_leader(True)
     harness.begin_with_initial_hooks()
-    assert harness.charm.model.unit.status == BlockedStatus(
-        "Missing resource: oci-image"
-    )
+    assert harness.charm.model.unit.status == BlockedStatus("Missing resource: oci-image")
 
 
 def test_no_relation(harness):
