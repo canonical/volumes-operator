@@ -68,6 +68,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.deploy(
         "kubeflow-profiles",
         channel="latest/edge",
+        trust=True,
     )
 
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
