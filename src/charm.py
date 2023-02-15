@@ -98,6 +98,11 @@ class Operator(CharmBase):
                                     "resources": ["events"],
                                     "verbs": ["list"],
                                 },
+                                {
+                                    "apiGroups": ["kubeflow.org"],
+                                    "resources": ["notebooks"],
+                                    "verbs": ["list"],
+                                },
                             ],
                         }
                     ]
