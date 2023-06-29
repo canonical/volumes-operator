@@ -4,6 +4,10 @@
 
 import logging
 
+from charms.kubeflow_dashboard.v0.kubeflow_dashboard_sidebar import (
+    KubeflowDashboardSidebarRequirer,
+    SidebarItem,
+)
 from oci_image import OCIImageResource, OCIImageResourceError
 from ops.charm import CharmBase
 from ops.main import main
@@ -37,6 +41,14 @@ class Operator(CharmBase):
             self.on["ingress"].relation_changed,
         ]:
             self.framework.observe(event, self.main)
+
+        self.kubeflow_dashboard_sidebar = KubeflowDashboardSidebarRequirer(
+            charm=self,
+            relation_name="sidebar",
+            sidebar_items=[
+                SidebarItem(text="Volumes", link="/volumes/", type="item", icon="device:storage"),
+            ],
+        )
 
     def main(self, event):
         try:
