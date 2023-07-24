@@ -58,7 +58,6 @@ class Operator(CharmBase):
 
     def main(self, event):
         try:
-
             self._check_leader()
 
             interfaces = self._get_interfaces()
