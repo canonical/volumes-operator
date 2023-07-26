@@ -3,5 +3,6 @@ juju<3.0
 lightkube
 pytest
 pytest-operator
+pyyaml
 selenium
 selenium-wire
