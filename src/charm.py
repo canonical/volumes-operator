@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2021 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import logging
@@ -58,7 +58,6 @@ class Operator(CharmBase):
 
     def main(self, event):
         try:
-
             self._check_leader()
 
             interfaces = self._get_interfaces()
