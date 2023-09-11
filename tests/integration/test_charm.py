@@ -75,7 +75,6 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.add_relation("istio-pilot:ingress", "kubeflow-dashboard:ingress")
     await ops_test.model.add_relation("istio-pilot", "kubeflow-volumes")
     await ops_test.model.wait_for_idle(
-        wait_for_units=True,
         raise_on_blocked=True,
         raise_on_error=True,
         timeout=300,
