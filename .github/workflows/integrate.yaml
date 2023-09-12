@@ -54,10 +54,10 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: microk8s
-          channel: 1.24/stable
+          channel: 1.25-strict/stable
           microk8s-addons: "dns storage rbac metallb:10.64.140.43-10.64.140.49"
           charmcraft-channel: latest/candidate
-          juju-channel: 2.9/stable
+          juju-channel: 3.1/stable
 
       - name: Run test
         run: |
@@ -66,28 +66,28 @@ jobs:
           # Requires the model to be called kubeflow due to this bug:
           # https://github.com/kubeflow/kubeflow/issues/6136
           juju add-model kubeflow
-          sg microk8s -c "tox -e integration -- --model kubeflow"
+          sg snap_microk8s -c "tox -e integration -- --model kubeflow"
 
-      - run: sg microk8s -c "microk8s.kubectl get all -A"
+      - run: sg snap_microk8s -c "microk8s.kubectl get all -A"
         if: failure()
 
-      - run: sg microk8s -c "microk8s.kubectl get pods -A -oyaml"
+      - run: sg snap_microk8s -c "microk8s.kubectl get pods -A -oyaml"
         if: failure()
 
       - run: juju status
         if: failure()
 
       - name: Get kubeflow-volumes workload logs
-        run: sg microk8s -c "microk8s.kubectl logs --tail 100 -nkubeflow -ljuju-app=kubeflow-volumes"
+        run: sg snap_microk8s -c "microk8s.kubectl logs --tail 100 -nkubeflow -ljuju-app=kubeflow-volumes"
         if: failure()
 
       - name: Get kubeflow-volumes operator logs
-        run: sg microk8s -c "microk8s.kubectl logs --tail 100 -nkubeflow -ljuju-operator=kubeflow-volumes"
+        run: sg snap_microk8s -c "microk8s.kubectl logs --tail 100 -nkubeflow -ljuju-operator=kubeflow-volumes"
         if: failure()
 
       - name: Generate inspect tarball
         run: >
-          sg microk8s <<EOF
+          sg snap_microk8s <<EOF
             microk8s inspect | \
             grep -Po "Report tarball is at \K.+" | \
             xargs -I {} cp {} inspection-report-${{ strategy.job-index }}.tar.gz
