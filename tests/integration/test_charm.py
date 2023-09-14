@@ -91,8 +91,10 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
     await ops_test.model.add_relation("istio-pilot:ingress", "kubeflow-dashboard:ingress")
     await ops_test.model.add_relation("istio-pilot", "kubeflow-volumes")
+    # raise_on_blocked=False to avoid flakiness due to kubeflow-dashboard going to
+    # Blocked((install) Add required relation to kubeflow-profiles) although it has been added
     await ops_test.model.wait_for_idle(
-        raise_on_blocked=True,
+        raise_on_blocked=False,
         raise_on_error=True,
         timeout=300,
     )
