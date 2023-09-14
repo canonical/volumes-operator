@@ -3,16 +3,39 @@
 # See LICENSE file for licensing details.
 
 import logging
+from pathlib import Path
+from typing import Dict
 
 from charms.kubeflow_dashboard.v0.kubeflow_dashboard_links import (
     DashboardLink,
     KubeflowDashboardLinksRequirer,
 )
+from jinja2 import Template
 from oci_image import OCIImageResource, OCIImageResourceError
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from serialized_data_interface import NoCompatibleVersions, NoVersionsListed, get_interfaces
+
+
+def render_template(template_path: str, context: Dict) -> str:
+    """
+    Render a Jinja2 template.
+
+    This function takes the file path of a Jinja2 template and a context dictionary
+    containing the variables for template rendering. It loads the template,
+    substitutes the variables in the context, and returns the rendered content.
+
+    Args:
+        template_path (str): The file path of the Jinja2 template.
+        context (Dict): A dictionary containing the variables for template rendering.
+
+    Returns:
+        str: The rendered template content.
+    """
+    template = Template(Path(template_path).read_text())
+    rendered_template = template.render(**context)
+    return rendered_template
 
 
 class CheckFailed(Exception):
@@ -120,6 +143,11 @@ class Operator(CharmBase):
                                     "resources": ["notebooks"],
                                     "verbs": ["list"],
                                 },
+                                {
+                                    "apiGroups": ["kubeflow.org"],
+                                    "resources": ["pvcviewers"],
+                                    "verbs": ["get", "list", "create", "delete"],
+                                },
                             ],
                         }
                     ]
@@ -134,10 +162,34 @@ class Operator(CharmBase):
                             "APP_SECURE_COOKIES": str(config["secure-cookies"]).lower(),
                             "BACKEND_MODE": config["backend-mode"],
                             "APP_PREFIX": "/volumes",
+                            "VOLUME_VIEWER_IMAGE": config["volume-viewer-image"],
                         },
                         "ports": [{"name": "http", "containerPort": config["port"]}],
+                        "volumeConfig": [
+                            {
+                                "name": "viewer-spec",
+                                "mountPath": "/etc/config/",  # xwris to .yaml?
+                                "files": [
+                                    {
+                                        "path": "viewer-spec.yaml",
+                                        "content": render_template(
+                                            "src/templates/viewer-spec.yaml.j2", {}
+                                        ),
+                                    }
+                                ],
+                            },
+                        ],
                     }
                 ],
+            },
+            k8s_resources={
+                "configMaps": {
+                    "volumes-web-app-viewer-spec-ck6bhh4bdm": {
+                        "viewer-spec.yaml": render_template(
+                            "src/templates/viewer-spec.yaml.j2", {}
+                        ),
+                    },
+                },
             },
         )
 
