@@ -66,7 +66,7 @@ jobs:
           # Requires the model to be called kubeflow due to this bug:
           # https://github.com/kubeflow/kubeflow/issues/6136
           juju add-model kubeflow
-          sg snap_microk8s -c "tox -e integration -- --model kubeflow"
+          sg snap_microk8s -c "tox -e integration"
 
       - run: sg snap_microk8s -c "microk8s.kubectl get all -A"
         if: failure()
