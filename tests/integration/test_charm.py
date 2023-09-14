@@ -4,10 +4,10 @@
 import logging
 from pathlib import Path
 
-# from lightkube import Client
-# from lightkube.resources.core_v1 import Service
 import pytest
 import yaml
+from lightkube import Client
+from lightkube.resources.core_v1 import ConfigMap
 from pytest_operator.plugin import OpsTest
 
 # from random import choices
@@ -24,24 +24,41 @@ from pytest_operator.plugin import OpsTest
 log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
+KATIB_CONFIG = "volumes-web-app-viewer-spec-ck6bhh4bdm"
+CHARM_NAME = METADATA["name"]
+EXPECTED_CONFIG_MAP = {
+    "viewer-spec.yaml": '# Source: manifests/apps/volumes-web-app/upstream/base/viewer-spec.yaml\n# Note: the volumes-web-app allows expanding strings using ${VAR_NAME}\n# You may use any environment variable. This lets us e.g. specify images that can be modified using kustomize\'s image transformer.\n# Additionally, \'PVC_NAME\', \'NAME\' and \'NAMESPACE\' are defined\n# Name of the pvc is set by the volumes web app\npvc: $NAME\npodTemplate:\n  containers:\n    - name: main\n      image: $VOLUME_VIEWER_IMAGE\n      env:\n        - name: FB_ADDRESS\n          value: "0.0.0.0"\n        - name: FB_PORT\n          value: "8080"\n        - name: FB_DATABASE\n          value: /tmp/filebrowser.db\n        - name: FB_NOAUTH\n          value: "true"\n        - name: FB_BASEURL\n          value: /pvcviewers/$NAMESPACE/$NAME/\n      readinessProbe:\n        tcpSocket:\n          port: 8080\n        initialDelaySeconds: 2\n        periodSeconds: 10\n      # viewer-volume is provided automatically by the volumes web app\n      volumeMounts:\n        - name: viewer-volume\n          mountPath: /data\n      workingDir: /data\n      serviceAccountName: default-editor\nnetworking:\n  targetPort: 8080\n  basePrefix: "/pvcviewers"\n  rewrite: "/"\n  timeout: 30s\nrwoScheduling: true',  # noqa: E501
+}
+
+
+@pytest.fixture(scope="session")
+def lightkube_client() -> Client:
+    client = Client(field_manager=CHARM_NAME)
+    return client
 
 
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test: OpsTest):
-    charm_name = METADATA["name"]
-
     my_charm = await ops_test.build_charm(".")
     image_path = METADATA["resources"]["oci-image"]["upstream-source"]
 
     await ops_test.model.deploy(my_charm, resources={"oci-image": image_path})
 
     await ops_test.model.wait_for_idle(
-        [charm_name],
+        [CHARM_NAME],
         wait_for_active=True,
         raise_on_blocked=True,
         raise_on_error=True,
         timeout=300,
     )
+
+
+@pytest.mark.abort_on_fail
+async def test_configmap_created(lightkube_client: Client, ops_test: OpsTest):
+    """Test configmaps contents with default config."""
+    config_map = lightkube_client.get(ConfigMap, KATIB_CONFIG, namespace=ops_test.model_name)
+
+    assert config_map.data == EXPECTED_CONFIG_MAP
 
 
 @pytest.mark.abort_on_fail
@@ -102,6 +119,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
 
 
 # Disabled until we re-enable the selenium tests below
+# When reenabling, we should add Service to "from lightkube.resources.core_v1 import"
 # @pytest.fixture()
 # def driver(request, ops_test, profile):
 #     profile_name = profile
