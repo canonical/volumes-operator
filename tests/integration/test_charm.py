@@ -28,6 +28,7 @@ CONFIG_MAP = "volumes-web-app-viewer-spec-ck6bhh4bdm"
 CHARM_NAME = METADATA["name"]
 EXPECTED_CONFIG_MAP = yaml.safe_load(Path("./tests/integration/config-map.yaml").read_text())
 
+
 @pytest.fixture(scope="session")
 def lightkube_client() -> Client:
     client = Client(field_manager=CHARM_NAME)
