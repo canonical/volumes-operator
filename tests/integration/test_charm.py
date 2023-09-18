@@ -24,12 +24,9 @@ from pytest_operator.plugin import OpsTest
 log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
-KATIB_CONFIG = "volumes-web-app-viewer-spec-ck6bhh4bdm"
+CONFIG_MAP = "volumes-web-app-viewer-spec-ck6bhh4bdm"
 CHARM_NAME = METADATA["name"]
-EXPECTED_CONFIG_MAP = {
-    "viewer-spec.yaml": '# Source: manifests/apps/volumes-web-app/upstream/base/viewer-spec.yaml\n# Note: the volumes-web-app allows expanding strings using ${VAR_NAME}\n# You may use any environment variable. This lets us e.g. specify images that can be modified using kustomize\'s image transformer.\n# Additionally, \'PVC_NAME\', \'NAME\' and \'NAMESPACE\' are defined\n# Name of the pvc is set by the volumes web app\npvc: $NAME\npodTemplate:\n  containers:\n    - name: main\n      image: $VOLUME_VIEWER_IMAGE\n      env:\n        - name: FB_ADDRESS\n          value: "0.0.0.0"\n        - name: FB_PORT\n          value: "8080"\n        - name: FB_DATABASE\n          value: /tmp/filebrowser.db\n        - name: FB_NOAUTH\n          value: "true"\n        - name: FB_BASEURL\n          value: /pvcviewers/$NAMESPACE/$NAME/\n      readinessProbe:\n        tcpSocket:\n          port: 8080\n        initialDelaySeconds: 2\n        periodSeconds: 10\n      # viewer-volume is provided automatically by the volumes web app\n      volumeMounts:\n        - name: viewer-volume\n          mountPath: /data\n      workingDir: /data\n      serviceAccountName: default-editor\nnetworking:\n  targetPort: 8080\n  basePrefix: "/pvcviewers"\n  rewrite: "/"\n  timeout: 30s\nrwoScheduling: true',  # noqa: E501
-}
-
+EXPECTED_CONFIG_MAP = yaml.safe_load(Path("./tests/integration/config-map.yaml").read_text())
 
 @pytest.fixture(scope="session")
 def lightkube_client() -> Client:
@@ -56,7 +53,7 @@ async def test_build_and_deploy(ops_test: OpsTest):
 @pytest.mark.abort_on_fail
 async def test_configmap_created(lightkube_client: Client, ops_test: OpsTest):
     """Test configmaps contents with default config."""
-    config_map = lightkube_client.get(ConfigMap, KATIB_CONFIG, namespace=ops_test.model_name)
+    config_map = lightkube_client.get(ConfigMap, CONFIG_MAP, namespace=ops_test.model_name)
 
     assert config_map.data == EXPECTED_CONFIG_MAP
 
