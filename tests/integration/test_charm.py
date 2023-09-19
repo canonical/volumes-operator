@@ -4,10 +4,10 @@
 import logging
 from pathlib import Path
 
-# from lightkube import Client
-# from lightkube.resources.core_v1 import Service
 import pytest
 import yaml
+from lightkube import Client
+from lightkube.resources.core_v1 import ConfigMap
 from pytest_operator.plugin import OpsTest
 
 # from random import choices
@@ -24,24 +24,39 @@ from pytest_operator.plugin import OpsTest
 log = logging.getLogger(__name__)
 
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
+CONFIG_MAP = "volumes-web-app-viewer-spec-ck6bhh4bdm"
+CHARM_NAME = METADATA["name"]
+EXPECTED_CONFIG_MAP = yaml.safe_load(Path("./tests/integration/config-map.yaml").read_text())
+
+
+@pytest.fixture(scope="session")
+def lightkube_client() -> Client:
+    client = Client(field_manager=CHARM_NAME)
+    return client
 
 
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test: OpsTest):
-    charm_name = METADATA["name"]
-
     my_charm = await ops_test.build_charm(".")
     image_path = METADATA["resources"]["oci-image"]["upstream-source"]
 
     await ops_test.model.deploy(my_charm, resources={"oci-image": image_path})
 
     await ops_test.model.wait_for_idle(
-        [charm_name],
+        [CHARM_NAME],
         wait_for_active=True,
         raise_on_blocked=True,
         raise_on_error=True,
         timeout=300,
     )
+
+
+@pytest.mark.abort_on_fail
+async def test_configmap_created(lightkube_client: Client, ops_test: OpsTest):
+    """Test configmaps contents with default config."""
+    config_map = lightkube_client.get(ConfigMap, CONFIG_MAP, namespace=ops_test.model_name)
+
+    assert config_map.data == EXPECTED_CONFIG_MAP
 
 
 @pytest.mark.abort_on_fail
@@ -74,8 +89,10 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
     await ops_test.model.add_relation("istio-pilot:ingress", "kubeflow-dashboard:ingress")
     await ops_test.model.add_relation("istio-pilot", "kubeflow-volumes")
+    # raise_on_blocked=False to avoid flakiness due to kubeflow-dashboard going to
+    # Blocked((install) Add required relation to kubeflow-profiles) although it has been added
     await ops_test.model.wait_for_idle(
-        raise_on_blocked=True,
+        raise_on_blocked=False,
         raise_on_error=True,
         timeout=300,
     )
@@ -102,6 +119,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
 
 
 # Disabled until we re-enable the selenium tests below
+# When reenabling, we should add Service to "from lightkube.resources.core_v1 import"
 # @pytest.fixture()
 # def driver(request, ops_test, profile):
 #     profile_name = profile
