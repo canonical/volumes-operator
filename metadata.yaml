@@ -4,6 +4,7 @@
 name: kubeflow-volumes
 summary: Kubeflow Volumes
 description: Kubeflow Volumes
+docs: https://discourse.charmhub.io/t/8234
 maintainers: [Juju Developers <juju@lists.ubuntu.com>]
 tags: [ai, bigdata, kubeflow, machine-learning, tensorflow]
 min-juju-version: '2.9.0'
