@@ -5,7 +5,8 @@ viewer-spec.yaml: |-
   # Additionally, 'PVC_NAME', 'NAME' and 'NAMESPACE' are defined
   # Name of the pvc is set by the volumes web app
   pvc: $NAME
-  podTemplate:
+  podSpec:
+    serviceAccountName: default-editor
     containers:
       - name: main
         image: $VOLUME_VIEWER_IMAGE
@@ -28,9 +29,17 @@ viewer-spec.yaml: |-
         # viewer-volume is provided automatically by the volumes web app
         volumeMounts:
           - name: viewer-volume
-            mountPath: /data
-        workingDir: /data
-        serviceAccountName: default-editor
+            mountPath: /srv
+        workingDir: /srv
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+    volumes:
+      - name: viewer-volume
+        persistentVolumeClaim:
+          claimName: $NAME
   networking:
     targetPort: 8080
     basePrefix: "/pvcviewers"
