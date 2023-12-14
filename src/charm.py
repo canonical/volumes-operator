@@ -6,16 +6,19 @@ import logging
 from pathlib import Path
 from typing import Dict
 
+import yaml
 from charms.kubeflow_dashboard.v0.kubeflow_dashboard_links import (
     DashboardLink,
     KubeflowDashboardLinksRequirer,
 )
 from jinja2 import Template
-from oci_image import OCIImageResource, OCIImageResourceError
 from ops.charm import CharmBase
+from ops.framework import Object
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, ModelError, WaitingStatus
 from serialized_data_interface import NoCompatibleVersions, NoVersionsListed, get_interfaces
+
+# from .oci_image import OCIImageResource, OCIImageResourceError
 
 
 def render_template(template_path: str, context: Dict) -> str:
@@ -55,6 +58,7 @@ class Operator(CharmBase):
 
         self.log = logging.getLogger(__name__)
         self.image = OCIImageResource(self, "oci-image")
+        self.log.info("Setting up kimwnasptd...")
 
         for event in [
             self.on.config_changed,
@@ -85,7 +89,9 @@ class Operator(CharmBase):
 
             interfaces = self._get_interfaces()
 
+            self.log.info("Getting image details...")
             image_details = self._check_image_details()
+            self.log.info("Image details: %s", image_details)
 
         except CheckFailed as check_failed:
             self.model.unit.status = check_failed.status
@@ -226,6 +232,73 @@ class Operator(CharmBase):
         except OCIImageResourceError as e:
             raise CheckFailed(f"{e.status.message}", e.status_type)
         return image_details
+
+
+# Helper
+class OCIImageResource(Object):
+    def __init__(self, charm, resource_name):
+        super().__init__(charm, resource_name)
+        self.resource_name = resource_name
+        self.log = logging.getLogger(__name__)
+
+    def fetch(self) -> Dict:
+        try:
+            self.log.info("Trying to fetch resource_path")
+            resource_path = self.model.resources.fetch(self.resource_name)
+        except ModelError as e:
+            self.log.error(e)
+            raise MissingResourceError(self.resource_name) from e
+        if not resource_path.exists():
+            self.log.error("Resource path doesn't exist")
+            raise MissingResourceError(self.resource_name)
+        resource_text = Path(resource_path).read_text()
+        if not resource_text:
+            self.log.error("Resource text doesn't exist.")
+            raise MissingResourceError(self.resource_name)
+        try:
+            resource_data = yaml.safe_load(resource_text)
+        except yaml.YAMLError as e:
+            raise InvalidResourceError(self.resource_name) from e
+        else:
+            # Translate the data from the format used by the charm store to the
+            # format used by the Juju K8s pod spec, since that is how this is
+            # typically used:
+            # {
+            #   'imagePath': image,
+            #   'password': pwd,
+            #   'username': user
+            # }
+            # where imagePath is the only mandatory field.
+            image_info = {}
+            try:
+                image_info["imagePath"] = resource_data["registrypath"]
+            except KeyError as e:
+                raise InvalidResourceError(self.resource_name) from e
+
+            if "username" in resource_data:
+                image_info["username"] = resource_data["username"]
+            if "password" in resource_data:
+                image_info["password"] = resource_data["password"]
+            return image_info
+
+
+class OCIImageResourceError(ModelError):
+    status_type = BlockedStatus
+    status_message = "Resource error"
+
+    def __init__(self, resource_name):
+        super().__init__(resource_name)
+        self.status = self.status_type(
+            "{}: {}".format(self.status_message, resource_name)
+        )
+
+
+class MissingResourceError(OCIImageResourceError):
+    status_message = "Missing resource"
+
+
+class InvalidResourceError(OCIImageResourceError):
+    status_message = "Invalid resource"
 
 
 if __name__ == "__main__":
