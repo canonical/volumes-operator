@@ -43,7 +43,7 @@ def render_ingress_data(service, port) -> dict:
     }
 
 
-def test_not_leader(harness, mocked_kubernetes_service_patch):
+def test_not_leader(harness, mocked_lightkube_client, mocked_kubernetes_service_patch):
     """Test when we are not the leader."""
     harness.begin_with_initial_hooks()
     # Assert that we are not Active, and that the leadership-gate is the cause.
