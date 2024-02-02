@@ -1,4 +1,4 @@
-# Copyright 2023 Canonical Ltd.
+# Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import logging
@@ -6,15 +6,13 @@ from pathlib import Path
 
 import pytest
 import yaml
-from lightkube import Client
-from lightkube.resources.core_v1 import ConfigMap
 from pytest_operator.plugin import OpsTest
 
 # from random import choices
 # from string import ascii_lowercase
 # from subprocess import check_output
 # from time import sleep
-
+# from lightkube import Client
 
 # from selenium.common.exceptions import JavascriptException, WebDriverException
 # from selenium.webdriver.firefox.options import Options
@@ -26,21 +24,22 @@ log = logging.getLogger(__name__)
 METADATA = yaml.safe_load(Path("./metadata.yaml").read_text())
 CONFIG_MAP = "volumes-web-app-viewer-spec-ck6bhh4bdm"
 CHARM_NAME = METADATA["name"]
-EXPECTED_CONFIG_MAP = yaml.safe_load(Path("./tests/integration/config-map.yaml").read_text())
 
 
-@pytest.fixture(scope="session")
-def lightkube_client() -> Client:
-    client = Client(field_manager=CHARM_NAME)
-    return client
+# @pytest.fixture(scope="session")
+# def lightkube_client() -> Client:
+#     client = Client(field_manager=CHARM_NAME)
+#     return client
 
 
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test: OpsTest):
     my_charm = await ops_test.build_charm(".")
-    image_path = METADATA["resources"]["oci-image"]["upstream-source"]
+    image_path = METADATA["resources"]["kubeflow-volumes-image"]["upstream-source"]
 
-    await ops_test.model.deploy(my_charm, resources={"oci-image": image_path})
+    await ops_test.model.deploy(
+        my_charm, resources={"kubeflow-volumes-image": image_path}, trust=True
+    )
 
     await ops_test.model.wait_for_idle(
         [CHARM_NAME],
@@ -49,14 +48,6 @@ async def test_build_and_deploy(ops_test: OpsTest):
         raise_on_error=True,
         timeout=300,
     )
-
-
-@pytest.mark.abort_on_fail
-async def test_configmap_created(lightkube_client: Client, ops_test: OpsTest):
-    """Test configmaps contents with default config."""
-    config_map = lightkube_client.get(ConfigMap, CONFIG_MAP, namespace=ops_test.model_name)
-
-    assert config_map.data == EXPECTED_CONFIG_MAP
 
 
 @pytest.mark.abort_on_fail
@@ -234,13 +225,13 @@ async def test_relate_dependencies(ops_test: OpsTest):
 #     wait.until_not(lambda x: x.execute_script(script))
 
 
-def evaluate(doc, xpath):
-    result_type = "XPathResult.FIRST_ORDERED_NODE_TYPE"
-    return f'return {doc}.evaluate("{xpath}", {doc}, null, {result_type}, null).singleNodeValue'
+# def evaluate(doc, xpath):
+#     result_type = "XPathResult.FIRST_ORDERED_NODE_TYPE"
+#     return f'return {doc}.evaluate("{xpath}", {doc}, null, {result_type}, null).singleNodeValue'
 
 
-def fix_queryselector(elems):
-    """Workaround for web components breaking querySelector."""
+# def fix_queryselector(elems):
+#     """Workaround for web components breaking querySelector."""
 
-    selectors = '").shadowRoot.querySelector("'.join(elems)
-    return 'return document.querySelector("' + selectors + '")'
+#     selectors = '").shadowRoot.querySelector("'.join(elems)
+#     return 'return document.querySelector("' + selectors + '")'

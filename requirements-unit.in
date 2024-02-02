@@ -1,4 +1,4 @@
-# Copyright 2023 Canonical Ltd.
+# Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 # Please note this file introduces dependencies from the charm's requirements.in,
 # special attention must be taken when updating this or the other .in file to try

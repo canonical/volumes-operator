@@ -1,19 +1,17 @@
-# Copyright 2023 Canonical Ltd.
+# Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 name: kubeflow-volumes
 summary: Kubeflow Volumes
 description: Kubeflow Volumes
 docs: https://discourse.charmhub.io/t/8234
-maintainers: [Juju Developers <juju@lists.ubuntu.com>]
-tags: [ai, bigdata, kubeflow, machine-learning, tensorflow]
-min-juju-version: '2.9.0'
-series: [kubernetes]
+containers:
+  kubeflow-volumes:
+    resource: kubeflow-volumes-image
 resources:
-  oci-image:
+  kubeflow-volumes-image:
     type: oci-image
     description: 'Backing OCI image'
-    auto-fetch: true
     upstream-source: docker.io/kubeflownotebookswg/volumes-web-app:v1.8.0
 requires:
   ingress:
