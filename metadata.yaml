@@ -5,11 +5,13 @@ name: kubeflow-volumes
 summary: Kubeflow Volumes
 description: Kubeflow Volumes
 docs: https://discourse.charmhub.io/t/8234
+website: https://charmhub.io/kubeflow-volumes
+source: https://github.com/canonical/kubeflow-volumes-operator
 containers:
   kubeflow-volumes:
-    resource: kubeflow-volumes-image
+    resource: oci-image
 resources:
-  kubeflow-volumes-image:
+  oci-image:
     type: oci-image
     description: 'Backing OCI image'
     upstream-source: docker.io/kubeflownotebookswg/volumes-web-app:v1.8.0

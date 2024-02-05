@@ -35,10 +35,10 @@ CHARM_NAME = METADATA["name"]
 @pytest.mark.abort_on_fail
 async def test_build_and_deploy(ops_test: OpsTest):
     my_charm = await ops_test.build_charm(".")
-    image_path = METADATA["resources"]["kubeflow-volumes-image"]["upstream-source"]
+    image_path = METADATA["resources"]["oci-image"]["upstream-source"]
 
     await ops_test.model.deploy(
-        my_charm, resources={"kubeflow-volumes-image": image_path}, trust=True
+        my_charm, resources={"oci-image": image_path}, trust=True
     )
 
     await ops_test.model.wait_for_idle(

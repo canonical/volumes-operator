@@ -50,7 +50,7 @@ DASHBOARD_LINKS = [
 
 
 class KubeflowVolumesOperator(CharmBase):
-    """Charm for the Kubeflow Volumes.
+    """Charm for the Kubeflow Volumes Web App.
 
     https://github.com/canonical/kubeflow-volumes-operator
     """
@@ -65,7 +65,7 @@ class KubeflowVolumesOperator(CharmBase):
             dashboard_links=DASHBOARD_LINKS,
         )
 
-        # expose dashboard's port
+        # expose web app's port
         http_port = ServicePort(int(self.model.config["port"]), name="http")
         self.service_patcher = KubernetesServicePatch(
             self, [http_port], service_name=f"{self.model.app.name}"
