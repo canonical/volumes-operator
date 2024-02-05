@@ -37,9 +37,7 @@ async def test_build_and_deploy(ops_test: OpsTest):
     my_charm = await ops_test.build_charm(".")
     image_path = METADATA["resources"]["oci-image"]["upstream-source"]
 
-    await ops_test.model.deploy(
-        my_charm, resources={"oci-image": image_path}, trust=True
-    )
+    await ops_test.model.deploy(my_charm, resources={"oci-image": image_path}, trust=True)
 
     await ops_test.model.wait_for_idle(
         [CHARM_NAME],
