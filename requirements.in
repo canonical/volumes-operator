@@ -1,7 +1,7 @@
-# Copyright 2023 Canonical Ltd.
+# Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+charmed-kubeflow-chisme >= 0.2.0
+lightkube
 ops
-oci-image
 serialized-data-interface
-jinja2
