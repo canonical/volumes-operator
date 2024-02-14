@@ -16,5 +16,5 @@ options:
     description: Whether cookies should require HTTPS
   volume-viewer-image:
     type: string
-    default: filebrowser/filebrowser:v2.23.0
+    default: charmedkubeflow/filebrowser:2.27.0-f21fe9d
     description: Volume Viewer OCI Image (PVCViewer)
