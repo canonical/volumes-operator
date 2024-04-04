@@ -28,6 +28,20 @@ CONFIG_MAP = "volumes-web-app-viewer-spec-ck6bhh4bdm"
 CHARM_NAME = METADATA["name"]
 EXPECTED_CONFIG_MAP = yaml.safe_load(Path("./tests/integration/config-map.yaml").read_text())
 
+# Test dependencies
+ISTIO_GATEWAY = "istio-gateway"
+ISTIO_GATEWAY_NAME = "istio-ingressgateway"
+ISTIO_GATEWAY_CHANNEL = "1.17/stable"
+TRUST_GATEWAY_PILOT = True
+ISTIO_PILOT = "istio-pilot"
+ISTIO_PILOT_CHANNEL = "1.17/stable"
+TRUST_ISTIO_PILOT = True
+KUBEFLOW_PROFILES = "kubeflow-profiles"
+KUBEFLOW_PROFILES_CHANNEL = "1.8/stable"
+TRUST_KUBEFLOW_PROFILES = True
+KUBEFLOW_DASHBOARD = "kubeflow-dashboard"
+KUBEFLOW_DASHBOARD_CHANNEL = "1.8/stable"
+TRUST_KUBEFLOW_DASHBOARD = True
 
 @pytest.fixture(scope="session")
 def lightkube_client() -> Client:
@@ -62,28 +76,28 @@ async def test_configmap_created(lightkube_client: Client, ops_test: OpsTest):
 @pytest.mark.abort_on_fail
 async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.deploy(
-        "istio-pilot",
-        channel="latest/edge",
+        ISTIO_PILOT,
+        channel=ISTIO_PILOT_CHANNEL,
         config={"default-gateway": "kubeflow-gateway"},
-        trust=True,
+        trust=TRUST_ISTIO_PILOT,
     )
 
     await ops_test.model.deploy(
-        "istio-gateway",
-        application_name="istio-ingressgateway",
-        channel="latest/edge",
+        ISTIO_GATEWAY,
+        application_name=ISTIO_GATEWAY_NAME,
+        channel=ISTIO_GATEWAY_CHANNEL,
         config={"kind": "ingress"},
-        trust=True,
+        trust=TRUST_ISTIO_GATEWAY,
     )
     await ops_test.model.add_relation(
         "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
     )
 
-    await ops_test.model.deploy("kubeflow-dashboard", channel="latest/edge", trust=True)
+    await ops_test.model.deploy(KUBEFLOW_DASHBOARD, channel=KUBEFLOW_DASHBOARD_CHANNEL, trust=TRUST_KUBEFLOW_DASHBOARD)
     await ops_test.model.deploy(
-        "kubeflow-profiles",
-        channel="latest/edge",
-        trust=True,
+        KUBEFLOW_PROFILES,
+        channel=KUBEFLOW_PROFILES_CHANNEL,
+        trust=TRUST_KUBEFLOW_PROFILES,
     )
 
     await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
