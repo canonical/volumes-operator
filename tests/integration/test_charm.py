@@ -32,7 +32,7 @@ EXPECTED_CONFIG_MAP = yaml.safe_load(Path("./tests/integration/config-map.yaml")
 ISTIO_GATEWAY = "istio-gateway"
 ISTIO_GATEWAY_NAME = "istio-ingressgateway"
 ISTIO_GATEWAY_CHANNEL = "1.17/stable"
-TRUST_GATEWAY_PILOT = True
+TRUST_ISTIO_GATEWAY = True
 ISTIO_PILOT = "istio-pilot"
 ISTIO_PILOT_CHANNEL = "1.17/stable"
 TRUST_ISTIO_PILOT = True
@@ -42,6 +42,7 @@ TRUST_KUBEFLOW_PROFILES = True
 KUBEFLOW_DASHBOARD = "kubeflow-dashboard"
 KUBEFLOW_DASHBOARD_CHANNEL = "1.8/stable"
 TRUST_KUBEFLOW_DASHBOARD = True
+
 
 @pytest.fixture(scope="session")
 def lightkube_client() -> Client:
@@ -93,7 +94,9 @@ async def test_relate_dependencies(ops_test: OpsTest):
         "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
     )
 
-    await ops_test.model.deploy(KUBEFLOW_DASHBOARD, channel=KUBEFLOW_DASHBOARD_CHANNEL, trust=TRUST_KUBEFLOW_DASHBOARD)
+    await ops_test.model.deploy(
+        KUBEFLOW_DASHBOARD, channel=KUBEFLOW_DASHBOARD_CHANNEL, trust=TRUST_KUBEFLOW_DASHBOARD
+    )
     await ops_test.model.deploy(
         KUBEFLOW_PROFILES,
         channel=KUBEFLOW_PROFILES_CHANNEL,
