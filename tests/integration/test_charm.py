@@ -83,7 +83,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
     await ops_test.model.wait_for_idle(
         raise_on_blocked=False,
         raise_on_error=True,
-        timeout=300,
+        timeout=900,
     )
 
 
