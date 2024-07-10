@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from charmed_kubeflow_chisme.testing import assert_logging, deploy_and_assert_grafana_agent
 from pytest_operator.plugin import OpsTest
 
 # from random import choices
@@ -47,6 +48,11 @@ async def test_build_and_deploy(ops_test: OpsTest):
         timeout=300,
     )
 
+    # Deploying grafana-agent-k8s and add all relations
+    await deploy_and_assert_grafana_agent(
+        ops_test.model, CHARM_NAME, metrics=False, dashboard=False, logging=True
+    )
+
 
 @pytest.mark.abort_on_fail
 async def test_relate_dependencies(ops_test: OpsTest):
@@ -64,9 +70,7 @@ async def test_relate_dependencies(ops_test: OpsTest):
         config={"kind": "ingress"},
         trust=True,
     )
-    await ops_test.model.add_relation(
-        "istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot"
-    )
+    await ops_test.model.integrate("istio-pilot:istio-pilot", "istio-ingressgateway:istio-pilot")
 
     await ops_test.model.deploy("kubeflow-dashboard", channel="latest/edge", trust=True)
     await ops_test.model.deploy(
@@ -75,9 +79,9 @@ async def test_relate_dependencies(ops_test: OpsTest):
         trust=True,
     )
 
-    await ops_test.model.add_relation("kubeflow-dashboard", "kubeflow-profiles")
-    await ops_test.model.add_relation("istio-pilot:ingress", "kubeflow-dashboard:ingress")
-    await ops_test.model.add_relation("istio-pilot", "kubeflow-volumes")
+    await ops_test.model.integrate("kubeflow-dashboard", "kubeflow-profiles")
+    await ops_test.model.integrate("istio-pilot:ingress", "kubeflow-dashboard:ingress")
+    await ops_test.model.integrate("istio-pilot", "kubeflow-volumes")
     # raise_on_blocked=False to avoid flakiness due to kubeflow-dashboard going to
     # Blocked((install) Add required relation to kubeflow-profiles) although it has been added
     await ops_test.model.wait_for_idle(
@@ -85,6 +89,12 @@ async def test_relate_dependencies(ops_test: OpsTest):
         raise_on_error=True,
         timeout=900,
     )
+
+
+async def test_logging(ops_test: OpsTest):
+    """Test logging is defined in relation data bag."""
+    app = ops_test.model.applications[CHARM_NAME]
+    await assert_logging(app)
 
 
 # # Disabled until we re-enable the selenium tests below
