@@ -28,7 +28,7 @@ class KubeflowVolumesPebbleService(PebbleServiceComponent):
             {
                 "services": {
                     self.service_name: {
-                        "override": "replace",
+                        "override": "merge",
                         "summary": "entry point for kubeflow-volumes",
                         "command": "/bin/bash -c 'gunicorn -w 3 --bind 0.0.0.0:5000 --access-logfile - entrypoint:app'",  # noqa: E501
                         "startup": "enabled",
