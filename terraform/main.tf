@@ -1,4 +1,4 @@
-resource "juju_application" "kubeflow-volumes" {
+resource "juju_application" "kubeflow_volumes" {
   charm {
     name     = "kubeflow-volumes"
     channel  = var.channel
