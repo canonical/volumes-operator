@@ -10,7 +10,7 @@ output "provides" {
 output "requires" {
   value = {
     ingress         = "ingress"
-	dashboard_links = "dashboard-links"
-	logging         = "logging"
+    dashboard_links = "dashboard-links"
+    logging         = "logging"
   }
 }
