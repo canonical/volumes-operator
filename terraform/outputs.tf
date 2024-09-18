@@ -1,5 +1,5 @@
 output "app_name" {
-  value = juju_application.kubeflow-volumes.name
+  value = juju_application.kubeflow_volumes.name
 }
 
 output "provides" {
