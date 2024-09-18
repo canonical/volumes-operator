@@ -4,12 +4,13 @@ output "app_name" {
 
 output "provides" {
   value = {
-    grpc = "grpc",
   }
 }
 
 output "requires" {
   value = {
     ingress = "ingress"
+	dashboard_links = "dashboard-links"
+	logging = "logging"
   }
 }
